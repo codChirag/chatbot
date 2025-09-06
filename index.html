@@ -1,141 +1,199 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Box</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #f2f2f2;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Chat — MiniGPT</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🤖</text></svg>">
+<style>
+  :root{
+    --bg:#0f1724; --panel:#0b1220; --card:#0f172a; --muted:#99a0b3;
+    --accent:#7c5cff; --glass: rgba(255,255,255,.03);
+    --radius:14px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
+    background: linear-gradient(180deg,#071024 0%, #0b1220 60%);
+    color:#e6eef8; display:flex; gap:20px; padding:20px;
+  }
 
-    .chat-container {
-      width: 400px;
-      height: 600px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+  /* Layout */
+  .container{display:flex; flex:1; gap:20px; max-width:1200px; margin:0 auto; width:100%;}
+  .sidebar{
+    width:260px; background:linear-gradient(180deg,var(--panel),#071228);
+    border-radius:var(--radius); padding:14px; box-shadow:0 8px 30px rgba(0,0,0,.5);
+    display:flex; flex-direction:column; gap:12px; flex-shrink:0;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:14px}
+  .logo{width:40px;height:40px;border-radius:10px; background:linear-gradient(135deg,var(--accent),#00e5ff); display:flex;align-items:center;justify-content:center;color:#061022;font-weight:800}
+  .new-convo{background:linear-gradient(90deg,var(--accent),#00e5ff); color:#031018; padding:10px;border-radius:10px; text-align:center; cursor:pointer; font-weight:700}
+  .convos{flex:1; overflow:auto; padding-right:6px}
+  .convo{padding:10px;border-radius:10px;display:flex;gap:8px;align-items:center;cursor:pointer}
+  .convo:hover{background:rgba(255,255,255,.02)}
 
-    .chat-header {
-      background: #4a90e2;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-weight: bold;
-    }
+  /* Chat panel */
+  .panel{flex:1; display:flex; flex-direction:column; border-radius:var(--radius); background:linear-gradient(180deg,var(--card), #071028); overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.6)}
+  .header{padding:14px 18px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.03)}
+  .title{font-weight:700}
+  .chat{flex:1; padding:20px; overflow:auto; display:flex; flex-direction:column; gap:12px; scroll-behavior:smooth}
+  .msg{max-width:78%; padding:12px 14px; border-radius:12px; line-height:1.45; white-space:pre-wrap}
+  .user{align-self:flex-end; background:linear-gradient(90deg,var(--accent),#00e5ff); color:#071026; border-bottom-right-radius:6px}
+  .assistant{align-self:flex-start; background:rgba(255,255,255,.03); color:var(--muted); border-bottom-left-radius:6px; border:1px solid rgba(255,255,255,.02)}
+  .meta{font-size:12px;color:var(--muted); margin-top:6px; display:flex; gap:8px; align-items:center}
 
-    .chat-messages {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      background: #fafafa;
-    }
+  /* Composer */
+  .composer{padding:12px; border-top:1px solid rgba(255,255,255,.03); display:flex; gap:10px; align-items:center}
+  .input{
+    flex:1; display:flex; gap:8px; align-items:center; background:var(--glass); padding:10px; border-radius:12px;
+  }
+  .input textarea{width:100%; resize:none; height:44px; background:transparent; border:none; outline:none; color:inherit; font-size:15px}
+  .send{
+    background:linear-gradient(90deg,var(--accent),#00e5ff); padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; color:#041225; border:none;
+  }
 
-    .message {
-      margin: 10px 0;
-      max-width: 70%;
-      padding: 10px 15px;
-      border-radius: 16px;
-      font-size: 14px;
-      line-height: 1.4;
-      display: inline-block;
-      clear: both;
-    }
+  /* small screens */
+  @media (max-width:900px){
+    body{padding:12px}
+    .sidebar{display:none}
+    .container{max-width:100%}
+  }
 
-    .user {
-      background: #4a90e2;
-      color: white;
-      float: right;
-      border-bottom-right-radius: 4px;
-    }
-
-    .bot {
-      background: #e0e0e0;
-      color: black;
-      float: left;
-      border-bottom-left-radius: 4px;
-    }
-
-    .chat-input {
-      display: flex;
-      border-top: 1px solid #ddd;
-    }
-
-    .chat-input input {
-      flex: 1;
-      border: none;
-      padding: 15px;
-      font-size: 14px;
-      outline: none;
-    }
-
-    .chat-input button {
-      border: none;
-      background: #4a90e2;
-      color: white;
-      padding: 0 20px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    .chat-input button:hover {
-      background: #357abd;
-    }
-  </style>
+  /* tiny helpers */
+  .time{font-family:var(--mono); font-size:11px; color:var(--muted)}
+  .hint{font-size:13px;color:var(--muted)}
+  .assistant pre{background:rgba(0,0,0,.25); padding:10px; border-radius:8px; overflow:auto; font-family:var(--mono); font-size:14px; color:#e6eef8}
+</style>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">💬 My Chat Box</div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input">
-      <input type="text" id="chatInput" placeholder="Type a message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
+  <div class="container">
+    <aside class="sidebar" aria-label="Conversations">
+      <div class="brand"><div class="logo">AI</div> MiniGPT</div>
+      <div class="new-convo" id="newConv">+ New Chat</div>
+      <div class="convos" id="convos"></div>
+      <div class="hint">Tip: Ask for chords — e.g., "Give me chords for a pop progression in G major".</div>
+    </aside>
+
+    <main class="panel" role="main" aria-live="polite">
+      <div class="header">
+        <div class="title">MiniGPT — Ask anything</div>
+        <div class="time" id="status">Idle</div>
+      </div>
+
+      <div class="chat" id="chat"></div>
+
+      <div class="composer">
+        <div class="input" role="textbox" aria-label="Message input" id="inputWrap">
+          <textarea id="input" placeholder="Ask me anything... (Shift+Enter for newline)"></textarea>
+        </div>
+        <button class="send" id="sendBtn">Send</button>
+      </div>
+    </main>
   </div>
 
-  <script>
-    const chatMessages = document.getElementById("chatMessages");
-    const chatInput = document.getElementById("chatInput");
+<script>
+  // Minimal client logic: keeps conversation array, posts to /api/chat
+  const chatEl = document.getElementById('chat');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('sendBtn');
+  const statusEl = document.getElementById('status');
+  const convos = document.getElementById('convos');
+  const newConvBtn = document.getElementById('newConv');
 
-    function sendMessage() {
-      const text = chatInput.value.trim();
-      if (text === "") return;
+  // One conversation (extendable)
+  let conversation = [];
+  let conversationsList = [];
 
-      // User message
-      const userMsg = document.createElement("div");
-      userMsg.className = "message user";
-      userMsg.textContent = text;
-      chatMessages.appendChild(userMsg);
-
-      // Auto bot reply (for demo)
-      const botMsg = document.createElement("div");
-      botMsg.className = "message bot";
-      botMsg.textContent = "You said: " + text;
-      chatMessages.appendChild(botMsg);
-
-      // Scroll to bottom
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-
-      // Clear input
-      chatInput.value = "";
+  function addMessage(role, content) {
+    const wrap = document.createElement('div');
+    wrap.className = role === 'user' ? 'msg user' : 'msg assistant';
+    // simple timestamp meta
+    const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    wrap.innerHTML = `<div>${escapeHtml(content)}</div><div class="meta"><span class="time">${time}</span></div>`;
+    // If assistant message contains code fences, render them as <pre>
+    if (role === 'assistant' && /```/.test(content)) {
+      const formatted = formatCodeBlocks(content);
+      wrap.innerHTML = formatted + `<div class="meta"><span class="time">${time}</span></div>`;
     }
+    chatEl.appendChild(wrap);
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
 
-    // Allow pressing Enter to send
-    chatInput.addEventListener("keypress", function(e) {
-      if (e.key === "Enter") {
-        sendMessage();
+  function escapeHtml(str){
+    return str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  }
+
+  function formatCodeBlocks(text){
+    // convert ```lang\ncode\n``` into pre blocks
+    return text.replace(/```(?:([\w+-]+)\n)?([\s\S]*?)```/g, (m, lang, code) => {
+      return `<pre><code>${escapeHtml(code)}</code></pre>`;
+    }).replace(/\n/g,'<br>');
+  }
+
+  async function sendMessage() {
+    const txt = input.value.trim();
+    if (!txt) return;
+    // add user message to UI
+    addMessage('user', txt);
+    conversation.push({ role: 'user', content: txt });
+    input.value = '';
+    statusEl.textContent = 'Thinking…';
+
+    try {
+      // POST to backend
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ messages: conversation })
+      });
+      if (!resp.ok) {
+        const t = await resp.text();
+        addMessage('assistant', 'Error: ' + t);
+        statusEl.textContent = 'Error';
+        return;
       }
-    });
-  </script>
+      const { assistant } = await resp.json();
+      if (!assistant) {
+        addMessage('assistant', 'No reply from server.');
+        statusEl.textContent = 'Idle';
+        return;
+      }
+      // show assistant content
+      addMessage('assistant', assistant.content || assistant);
+      conversation.push(assistant); // push assistant message into conversation context
+      statusEl.textContent = 'Idle';
+    } catch (err) {
+      console.error(err);
+      addMessage('assistant','Network error: ' + (err.message || err));
+      statusEl.textContent = 'Error';
+    }
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+    // auto-resize
+    setTimeout(() => input.style.height = Math.min(200, input.scrollHeight) + 'px');
+  });
+
+  // New conversation
+  newConvBtn.addEventListener('click', () => {
+    conversation = [];
+    chatEl.innerHTML = '';
+    statusEl.textContent = 'New conversation';
+  });
+
+  // Small helper: initial greeting from assistant
+  (function init() {
+    const welcome = `Hi! I'm MiniGPT — ask me anything.\nTry: "Give me a chord progression for a pop chorus in G major with suggested strumming."`;
+    addMessage('assistant', welcome);
+    conversation.push({role:'assistant', content: welcome});
+  })();
+
+</script>
 </body>
 </html>
